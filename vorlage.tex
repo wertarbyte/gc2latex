@@ -1,0 +1,53 @@
+% Template for gc2latex
+% by Stefan Tomanek <stefan@pico.ruhr.de>
+% http://stefans.datenbruch.de/gnucash/gc2latex.shtml
+
+\documentclass[DIN, pagenumber=false, parskip=half,% 
+               fromalign=left, fromphone=true,%  
+               fromemail=true, fromurl=false, %
+               fromlogo=true, fromrule=false]{scrlttr2}
+
+\usepackage[latin1]{inputenc}
+\usepackage{german}
+\RequirePackage{graphicx}
+
+\setkomavar{fromname}{Max Mustermann}
+\setkomavar{fromaddress}{Musterstraße 34\\12345 Musterstadt}
+\setkomavar{fromphone}{01234/123456}
+\setkomavar{fromemail}{muster@email.de}
+\setkomavar{fromurl}{}
+\setkomavar{signature}{Max Mustermann}
+\setkomavar{fromlogo}{\includegraphics*[width=6cm]{musterfirma.eps}}
+\setkomavar{frombank}{Musterbank\\BLZ: 12345678\\Kontonummer: 0123456}
+\setkomavar{subject}{Rechnung Nr. __GNUCASH-INVOICE-ID__}
+\setkomavar{date}{__GNUCASH-POSTING-DATE__}
+
+\begin{document}
+
+\firstfoot{ {\hrulefill\\}%
+  \fontsize{9}{10.5}\selectfont%
+  \parbox[t]{0.4\textwidth}{%
+    Musterfirma\\
+    \usekomavar{fromname}\\
+    \usekomavar{fromaddress}}%
+  \hfill%
+  \parbox[t]{0.3\textwidth}{\usekomavar{fromname}\\\usekomavar{frombank}}%
+  \hfill% 
+  \parbox[t]{0.3\textwidth}{%
+    Steuernummer: 111/22222/3333\\
+    Finanzamt Musterstadt-Süd\par } 
+}
+
+\begin{letter}{__GNUCASH-CUSTOMER__}
+
+\opening{Sehr geehrte Damen und Herren,}
+hiermit erlaube ich ich mir zu berechnen:
+
+__GNUCASH-TABLE__
+
+\closing{Mit freundlichem Gruß}
+
+\end{letter}
+
+\end{document}
+

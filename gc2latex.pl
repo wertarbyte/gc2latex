@@ -1,0 +1,80 @@
+#!/usr/bin/perl
+
+# gc2latex.pl by Stefan Tomanek <stefan@pico.ruhr.de>
+
+use Gnucash::Business::Invoice;
+use Gnucash::Business::InvoiceEntry;
+use Gnucash::Business::Customer;
+use IO::File;
+use Date::Format;
+
+use strict;
+
+sub main($$$) {
+    my ($template, $gnucash, $id) = @_;
+
+    unless (defined $template && defined $gnucash && defined $id) {
+	print "Usage: gc2latex <template file> <account file> <invoice id>\n";
+	return;
+    }
+
+    my $parser = new XML::Parser (ErrorContext => 2, Style => "Tree");
+    my $xmlobj = new XML::SimpleObject( $parser->parsefile($gnucash) ) || die "Unable to open Gnucash file";
+    
+    my $invoice = new Invoice( $xmlobj, $id);
+
+    replace($template, $invoice);
+}
+
+sub createLaTeXTable($) {
+    my ($invoice) = @_;
+
+    my $cur = $invoice->getCurrency();
+
+    my $text = '\begin{longtable}{l|p{150pt}|l|l|r|r}'."\n";
+    $text .= 'Datum&Beschreibung&Einheit&Anzahl&Stückpreis&Betrag\\\\'."\n";
+    $text .= '\hline\hline'."\n";
+    foreach my $e (@{ $invoice->getEntries() }) {
+        $text .= time2str("%e.%L.%Y", $e->getDate())."&";
+        $text .= $e->getDescription()."&";
+        $text .= $e->getAction()."&";
+        $text .= $e->getQuantity()."&";
+        $text .= sprintf("%0.2f", $e->getNetPrice())." $cur&";
+        $text .= sprintf("%0.2f", $e->getNetSum())." ".$cur.'\\\\'."\n";
+        $text .= '\hline'."\n";
+    }
+    $text .= '\hline'."\n";
+    $text .= '\multicolumn{5}{r|}{Summe} &'.sprintf("%0.2f", $invoice->getNetSum()).' '.$cur.'\\\\'."\n";
+    ## FIXME
+    ##	* Retrieve the right percentage from gnucash file
+    ##	* Support multiple taxes
+    $text .= '\multicolumn{5}{r|}{zuzüglich 19\% Umsatzsteuer} &'.sprintf("%0.2f", $invoice->getTaxes()).' '.$cur.'\\\\'."\n";
+    $text .= '\hline\hline'."\n";
+    $text .= '\multicolumn{5}{r|}{Gesamtsumme} &'.sprintf("%0.2f", $invoice->getNetSum()+$invoice->getTaxes()).' '.$cur.'\\\\'."\n";
+    $text .= '\end{longtable}'."\n";
+    return $text;
+}
+
+sub replace($$) {
+    my ($template, $invoice) = @_;
+    
+    my $file = new IO::File "< $template" || die "Unable to open template";
+
+    while ( my $l = $file->getline() ) {
+        my $id = $invoice->getID();
+        my $date = time2str("%e.%L.%Y", $invoice->getPostingDate());
+        my $address = $invoice->getCustomer()->getAddress();
+        $address =~ s/\n/\\\\/g;
+        my $table = createLaTeXTable($invoice);
+
+        $l =~ s/__GNUCASH-INVOICE-ID__/$id/;
+        $l =~ s/__GNUCASH-POSTING-DATE__/$date/;
+        $l =~ s/__GNUCASH-CUSTOMER__/$address/;
+        $l =~ s/__GNUCASH-TABLE__/$table/;
+
+        print $l;
+    }
+    $file->close();
+}
+
+main($ARGV[0], $ARGV[1], $ARGV[2]);
