@@ -1,3 +1,9 @@
+gc2latex (0.2.1-1) unstable; urgency=low
+
+  * optionally use LaTeX::Encode to quote special characters
+
+ -- Stefan Tomanek <stefan@nano.zollstock.wertarbyte.de>  Sat, 17 Oct 2009 22:09:20 +0200
+
 gc2latex (0.1.0-1) unstable; urgency=low
 
   * Initial release
