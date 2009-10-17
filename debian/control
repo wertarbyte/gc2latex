@@ -9,6 +9,7 @@ Homepage: http://stefans.datenbruch.de/gnucash/gc2latex.shtml
 Package: gc2latex
 Architecture: all
 Depends: ${shlibs:Depends}, ${misc:Depends}, ${perl:Depends}, libtimedate-perl, libxml-simpleobject-perl
+Recommends: liblatex-encode-perl
 Suggests: texlive-latex-base
 Description: Convert gnucash invoices to pretty LaTeX documents
  This packages provides perl modules to retrieve invoice data
