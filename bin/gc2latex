@@ -35,7 +35,7 @@ sub l_enc {
         # if the module cannot be found, continue silently and
         # just leave the data untouched
         require LaTeX::Encode;
-        $result = LaTeX::Encode2::latex_encode( $data, {iquotes=>1} );
+        $result = LaTeX::Encode::latex_encode( $data, {iquotes=>1} );
     };
     return $result;
 }
