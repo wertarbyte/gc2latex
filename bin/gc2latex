@@ -7,6 +7,7 @@ use Gnucash::Business::InvoiceEntry;
 use Gnucash::Business::Customer;
 use IO::File;
 use Date::Format;
+use LaTeX::Encode;
 
 use strict;
 
@@ -26,6 +27,12 @@ sub main($$$) {
     replace($template, $invoice);
 }
 
+# LaTeX encode
+sub l_enc {
+    my ($data) = @_;
+    return latex_encode( $data, {iquotes=>1} )
+}
+
 sub createLaTeXTable($) {
     my ($invoice) = @_;
 
@@ -36,8 +43,8 @@ sub createLaTeXTable($) {
     $text .= '\hline\hline'."\n";
     foreach my $e (@{ $invoice->getEntries() }) {
         $text .= time2str("%e.%L.%Y", $e->getDate())."&";
-        $text .= $e->getDescription()."&";
-        $text .= $e->getAction()."&";
+        $text .= l_enc( $e->getDescription() )."&";
+        $text .= l_enc( $e->getAction() )."&";
         $text .= $e->getQuantity()."&";
         $text .= sprintf("%0.2f", $e->getNetPrice())." $cur&";
         $text .= sprintf("%0.2f", $e->getNetSum())." ".$cur.'\\\\'."\n";
@@ -62,8 +69,8 @@ sub replace($$) {
 
     while ( my $l = $file->getline() ) {
         my $id = $invoice->getID();
-        my $date = time2str("%e.%L.%Y", $invoice->getPostingDate());
-        my $address = $invoice->getCustomer()->getAddress();
+        my $date = l_enc( time2str("%e.%L.%Y", $invoice->getPostingDate()) );
+        my $address = l_enc( $invoice->getCustomer()->getAddress() );
         $address =~ s/\n/\\\\/g;
         my $table = createLaTeXTable($invoice);
 
