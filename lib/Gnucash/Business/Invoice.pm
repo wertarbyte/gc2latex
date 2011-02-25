@@ -31,7 +31,7 @@ sub fillInfos($$) {
     foreach (@invoices) {
         my $id = $_->child("invoice:id")->value();
         $id =~ s/^0*//g;
-        next unless ($id == $self->{id});
+        next unless ($id eq $self->{id});
         
         $self->{guid} = $_->child("invoice:guid")->value();
         
