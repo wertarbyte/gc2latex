@@ -50,6 +50,10 @@ sub fillInfos($$) {
 
         $self->{currency} = $_->child("invoice:currency")->child("cmdty:id")->value();
 
+        if ($_->child("invoice:billing_id")) {
+            $self->{billing_id} = $_->child("invoice:billing_id")->value();
+        }
+
         last;
     }
 }
@@ -113,5 +117,10 @@ sub getID($) {
 sub getCurrency($) {
     my ($self) = @_;
     return $self->{currency};
+}
+
+sub getBillingID($) {
+    my ($self) = @_;
+    return $self->{billing_id};
 }
 1;
