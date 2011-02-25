@@ -23,6 +23,7 @@ sub fillInfos($) {
     my $gc = $xml->child("gnc-v2")->child("gnc:book");
     
     my @tables = $gc->children("gnc:GncTaxTable");
+    return if ($tables[0] eq "");
     foreach my $tab (@tables) {
         next unless ($self->{guid} eq $tab->child("taxtable:guid")->value());
         
