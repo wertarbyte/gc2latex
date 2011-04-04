@@ -59,11 +59,11 @@ sub createLaTeXTable($) {
         $text .= l_enc( $e->getAction() )."&";
         $text .= $e->getQuantity()."&";
         $text .= sprintf("%0.2f", $e->getNetPrice())." $cur&";
-        $text .= sprintf("%0.2f", $e->getNetSum())." ".$cur.'\\\\'."\n";
+        $text .= sprintf("%0.2f", round($e->getNetSum()))." ".$cur.'\\\\'."\n";
         $text .= '\hline'."\n";
     }
     $text .= '\hline'."\n";
-    $text .= '\multicolumn{5}{r|}{Summe} &'.sprintf("%0.2f", $invoice->getNetSum()).' '.$cur.'\\\\'."\n";
+    $text .= '\multicolumn{5}{r|}{Summe} &'.sprintf("%0.2f", round($invoice->getNetSum())).' '.$cur.'\\\\'."\n";
     ## FIXME
     ##	* Retrieve the right percentage from gnucash file
     ##	* Support multiple taxes
@@ -96,6 +96,11 @@ sub replace($$) {
         print $l;
     }
     $file->close();
+}
+
+sub round($) {
+    my ($value) = @_;
+    return int($value * 100 + 0.5) / 100;
 }
 
 main($ARGV[0], $ARGV[1], $ARGV[2]);
