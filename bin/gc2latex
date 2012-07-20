@@ -52,7 +52,7 @@ sub createLaTeXTable($) {
 
     my $text = '\begin{longtable}{l|p{150pt}|l|l|r|r}'."\n";
     $text .= 'Datum&Beschreibung&Einheit&Anzahl&Stückpreis&Betrag\\\\'."\n";
-    $text .= '\hline\hline'."\n";
+    $text .= '\hline\hline\endhead'."\n";
     foreach my $e (@{ $invoice->getEntries() }) {
         $text .= time2str("%e.%L.%Y", $e->getDate())."&";
         $text .= l_enc( $e->getDescription() )."&";
