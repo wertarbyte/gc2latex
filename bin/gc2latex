@@ -7,6 +7,7 @@ use Gnucash::Business::InvoiceEntry;
 use Gnucash::Business::Customer;
 use IO::File;
 use Date::Format;
+use IO::Zlib;
 
 use strict;
 
@@ -19,8 +20,12 @@ sub main($$$) {
     }
 
     my $parser = new XML::Parser (ErrorContext => 2, Style => "Tree");
-    my $xmlobj = new XML::SimpleObject( $parser->parsefile($gnucash) ) || die "Unable to open Gnucash file";
-    
+
+    my $zhandle = new IO::Zlib;
+    $zhandle->open($gnucash, "rb") || die "Unable to zopen Gnucash file\n";
+
+    my $xmlobj = new XML::SimpleObject( $parser->parse($zhandle) ) || die "Unable to open Gnucash file";
+
     my $invoice = new Invoice( $xmlobj, $id);
 
     replace($template, $invoice);
