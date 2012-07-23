@@ -85,11 +85,13 @@ sub replace($$) {
         my $address = l_enc( $invoice->getCustomer()->getAddress() );
         $address =~ s/\n/\\\\/g;
         my $table = createLaTeXTable($invoice);
+        my $notes = $invoice->getNotes();
 
         $l =~ s/__GNUCASH-INVOICE-ID__/$id/;
         $l =~ s/__GNUCASH-POSTING-DATE__/$date/;
         $l =~ s/__GNUCASH-CUSTOMER__/$address/;
         $l =~ s/__GNUCASH-TABLE__/$table/;
+        $l =~ s/__GNUCASH-INVOICE-NOTES__/$notes/;
 
         print $l;
     }

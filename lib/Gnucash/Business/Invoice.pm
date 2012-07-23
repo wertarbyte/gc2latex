@@ -54,6 +54,10 @@ sub fillInfos($$) {
             $self->{billing_id} = $_->child("invoice:billing_id")->value();
         }
 
+	if (defined $_->child("invoice:notes")) {
+	    $self->{notes} = translateNewlines($_->child("invoice:notes")->value());
+	  }
+
         last;
     }
 }
@@ -123,4 +127,17 @@ sub getBillingID($) {
     my ($self) = @_;
     return $self->{billing_id};
 }
+
+sub getNotes($) {
+    my ($self) = @_;
+    return $self->{notes};
+}
+
+## translates newlines from '\n' into LaTeX syntax '\\'
+sub translateNewlines($) {
+    my ($value) = @_;
+    $value =~ s/\n/\\\\/g;
+    return $value;
+}
+
 1;
