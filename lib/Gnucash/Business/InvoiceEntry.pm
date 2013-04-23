@@ -29,7 +29,9 @@ sub fillInfo($$) {
 	
 	$self->{info}{date} = str2time($entry->child("entry:date")->child("ts:date")->value());
 	$self->{info}{description} = $entry->child("entry:description")->value();
-	$self->{info}{action} = $entry->child("entry:action")->value();
+        if ( $entry->child("entry:action") ) {
+	  $self->{info}{action} = $entry->child("entry:action")->value();
+        }
 	
 	$self->{info}{quantity} = 0;
 	if ($entry->child("entry:qty")->value() =~ /(\d+)\/(\d+)/) {
