@@ -67,6 +67,7 @@ sub fillEntries($$) {
     my @entries = $gc->child("gnc-v2")->child("gnc:book")->children("gnc:GncEntry");
     my @items;
     foreach my $entry (@entries) {
+        next unless ($entry->child("entry:invoice"));
         next unless ($entry->child("entry:invoice")->value() eq $self->{guid});
         
         my $entry = new InvoiceEntry( $gc, $entry->child("entry:guid")->value() );
