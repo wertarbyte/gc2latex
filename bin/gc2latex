@@ -79,13 +79,14 @@ sub replace($$) {
     
     my $file = new IO::File "< $template" || die "Unable to open template";
 
+    my $id = $invoice->getID();
+    my $date = l_enc( time2str("%e.%L.%Y", $invoice->getPostingDate()) );
+    my $address = l_enc( $invoice->getCustomer()->getAddress() );
+    $address =~ s/\n/\\\\/g;
+    my $table = createLaTeXTable($invoice);
+    my $notes = $invoice->getNotes();
+
     while ( my $l = $file->getline() ) {
-        my $id = $invoice->getID();
-        my $date = l_enc( time2str("%e.%L.%Y", $invoice->getPostingDate()) );
-        my $address = l_enc( $invoice->getCustomer()->getAddress() );
-        $address =~ s/\n/\\\\/g;
-        my $table = createLaTeXTable($invoice);
-        my $notes = $invoice->getNotes();
 
         $l =~ s/__GNUCASH-INVOICE-ID__/$id/;
         $l =~ s/__GNUCASH-POSTING-DATE__/$date/;
