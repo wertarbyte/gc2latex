@@ -76,7 +76,9 @@ sub createLaTexParams($) {
     $text .= "\\gclsetline{isTaxable}{$i}{"     . l_enc($e->isTaxable())                            . "}\n" ;
     $text .= "\\gclsetline{TaxTable}{$i}{"      . l_enc($e->getTaxTable())                          . "}\n" ;
     $text .= "\\gclsetline{isTaxIncluded}{$i}{" . l_enc($e->isTaxIncluded())                        . "}\n" ;
-    $text .= "\\gclsetline{amount}{$i}{"      . sprintf("%0.2f", round($e->getNetSum())) . "}\n" ;
+    $text .= "\\gclsetline{Subtotal}{$i}{"      . sprintf("%0.2f", round($e->getAmount('SubTotal'))). "}\n" ;
+    $text .= "\\gclsetline{Tax}{$i}{"           . sprintf("%0.2f", round($e->getAmount('Tax')))     . "}\n" ;
+    $text .= "\\gclsetline{Total}{$i}{"         . sprintf("%0.2f", round($e->getAmount('Total')))   . "}\n" ;
     $text .= "\n";
     $i=$i+1;
   }

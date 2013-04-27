@@ -82,7 +82,7 @@ sub getNetSum($) {
     
     my $sum = 0;
     foreach my $e (@{$self->{entries}}) {
-	$sum += $e->getNetSum();
+	$sum += $e->getAmount('SubTotal');
     }
     return $sum;
 }
@@ -92,7 +92,7 @@ sub getTaxes($) {
 
     my $tax = 0;
     foreach my $e (@{$self->{entries}}) {
-	$tax += $e->getTax();
+	$tax += $e->getAmount('Tax');
     }
     return $tax;
 }
