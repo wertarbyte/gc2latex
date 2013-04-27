@@ -32,7 +32,7 @@ sub main($$$) {
 }
 
 # LaTeX encode: use LaTeX::Encode if available
-sub l_enc {
+sub l_enc ($) {
     my ($data) = @_;
     my $result = $data;
     eval {
