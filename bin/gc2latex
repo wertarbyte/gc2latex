@@ -84,10 +84,14 @@ sub replace($$) {
     my $file = new IO::File "< $template" || die "Unable to open template";
 
     my $id = $invoice->getID();
-    my $date = l_enc( time2str("%e.%L.%Y", $invoice->getPostingDate()) );
+    my $postingdate = l_enc( time2str("%e.%L.%Y", $invoice->getPostingDate()) );
     my $address = l_enc( $invoice->getCustomer()->getAddress() );
     $address =~ s/\n/\\\\/g;
     my $notes = $invoice->getNotes();
+    my $currency = $invoice->getCurrency();
+    my $total = sprintf("%0.2f", $invoice->getNetSum()+$invoice->getTaxes());
+    my $subtotal = sprintf("%0.2f", $invoice->getNetSum());
+    my $taxes = sprintf("%0.2f", $invoice->getTaxes());
 
     # invoice items (mutliple lines)
     my $parameters = createLaTexParams($invoice);
@@ -96,9 +100,13 @@ sub replace($$) {
     while ( my $l = $file->getline() ) {
 
         $l =~ s/__GNUCASH-INVOICE-ID__/$id/;
-        $l =~ s/__GNUCASH-POSTING-DATE__/$date/;
+        $l =~ s/__GNUCASH-POSTING-DATE__/$postingdate/;
         $l =~ s/__GNUCASH-CUSTOMER__/$address/;
         $l =~ s/__GNUCASH-INVOICE-NOTES__/$notes/;
+        $l =~ s/__GNUCASH-CURRENCY__/$currency/;
+        $l =~ s/__GNUCASH-TOTAL__/$total/;
+        $l =~ s/__GNUCASH-SUBTOTAL__/$subtotal/;
+        $l =~ s/__GNUCASH-TAXES__/$taxes/;
 
         # invoice items (multiple lines)
         $l =~ s/__GNUCASH-MACROS__/$macros/;
