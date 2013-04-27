@@ -106,14 +106,14 @@ sub replace($$) {
     my $file = new IO::File "< $template" || die "Unable to open template";
     while ( my $l = $file->getline() ) {
 
-        $l =~ s/__GNUCASH-INVOICE-ID__/$id/;
-        $l =~ s/__GNUCASH-POSTING-DATE__/$postingdate/;
-        $l =~ s/__GNUCASH-CUSTOMER__/$address/;
-        $l =~ s/__GNUCASH-INVOICE-NOTES__/$notes/;
-        $l =~ s/__GNUCASH-CURRENCY__/$currency/;
-        $l =~ s/__GNUCASH-TOTAL__/$total/;
-        $l =~ s/__GNUCASH-SUBTOTAL__/$subtotal/;
-        $l =~ s/__GNUCASH-TAXES__/$taxes/;
+        $l =~ s/__GNUCASH-INVOICE-ID__/$id/g;
+        $l =~ s/__GNUCASH-POSTING-DATE__/$postingdate/g;
+        $l =~ s/__GNUCASH-CUSTOMER__/$address/g;
+        $l =~ s/__GNUCASH-INVOICE-NOTES__/$notes/g;
+        $l =~ s/__GNUCASH-CURRENCY__/$currency/g;
+        $l =~ s/__GNUCASH-TOTAL__/$total/g;
+        $l =~ s/__GNUCASH-SUBTOTAL__/$subtotal/g;
+        $l =~ s/__GNUCASH-TAXES__/$taxes/g;
 
         # invoice items (multiple lines)
         $l =~ s/__GNUCASH-MACROS__/$macros/;
