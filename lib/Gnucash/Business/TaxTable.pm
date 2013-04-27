@@ -75,23 +75,4 @@ sub CalculateTax ($$$) {
   return $tax;
 }
 
-sub calcTaxFromInvoiceEntry($$) {
-    my ($self, $entry) = @_;
-    my $tax = 0;
-    my $sum = $entry->getQuantity() * $entry->getPrice();
-    
-    foreach my $t (@{ $self->{entries} }) {
-        if ($t->{type} eq "VALUE") {
-            $tax += $t->{amount};
-        } elsif ($t->{type} eq "PERCENT") {
-            if ($entry->isTaxIncluded()) {
-                $tax += (100*$sum / (100+$t->{amount}) * ($t->{amount}/100) ) ;
-            } else {
-                $tax += $sum * $t->{amount} / 100;
-            }
-        }
-    }
-    return $tax;
-}
-
 1;

@@ -180,35 +180,6 @@ sub getAmount ($$) {
     }
 }
 
-sub getNetPrice ($) {
-    my ($self) = @_;
-    my $price = $self->getPrice();
-    if (isTaxIncluded($self)) {
-        $price -= $self->{taxtable}->calcTaxFromInvoiceEntry($self) / $self->getQuantity();
-    }
-    return $price;
-}
-
-sub getNetSum ($) {
-    my ($self) = @_;
-    my $sum = $self->getQuantity() * $self->getNetPrice();
-    return round($sum);
-}
-
-sub getGrossSum ($) {
-    my ($self) = @_;
-    my $sum = getQuantity($self) * getPrice($self);
-    if (not isTaxIncluded($self)) {
-        $sum += $self->{taxtable}->calcTaxFromInvoiceEntry($self);
-    }
-    return round($sum);
-}
-
-sub getTax ($) {
-    my ($self) = @_;
-    return getGrossSum($self)-getNetSum($self);
-}
-
 sub round($) {
     my ($value) = @_;
     return int($value * 100 + 0.5) / 100;
