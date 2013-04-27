@@ -45,35 +45,6 @@ sub l_enc ($) {
     return $result;
 }
 
-sub createLaTeXTable($) {
-    my ($invoice) = @_;
-
-    my $cur = $invoice->getCurrency();
-
-    my $text = '\begin{longtable}{l|p{150pt}|l|l|r|r}'."\n";
-    $text .= 'Datum&Beschreibung&Einheit&Anzahl&Stückpreis&Betrag\\\\'."\n";
-    $text .= '\hline\hline\endhead'."\n";
-    foreach my $e (@{ $invoice->getEntries() }) {
-        $text .= time2str("%e.%L.%Y", $e->getDate())."&";
-        $text .= l_enc( $e->getDescription() )."&";
-        $text .= l_enc( $e->getAction() )."&";
-        $text .= $e->getQuantity()."&";
-        $text .= sprintf("%0.2f", $e->getNetPrice())." $cur&";
-        $text .= sprintf("%0.2f", round($e->getNetSum()))." ".$cur.'\\\\'."\n";
-        $text .= '\hline'."\n";
-    }
-    $text .= '\hline'."\n";
-    $text .= '\multicolumn{5}{r|}{Summe} &'.sprintf("%0.2f", round($invoice->getNetSum())).' '.$cur.'\\\\'."\n";
-    ## FIXME
-    ##	* Retrieve the right percentage from gnucash file
-    ##	* Support multiple taxes
-    $text .= '\multicolumn{5}{r|}{zuzüglich 19\% Umsatzsteuer} &'.sprintf("%0.2f", $invoice->getTaxes()).' '.$cur.'\\\\'."\n";
-    $text .= '\hline\hline'."\n";
-    $text .= '\multicolumn{5}{r|}{Gesamtsumme} &'.sprintf("%0.2f", $invoice->getNetSum()+$invoice->getTaxes()).' '.$cur.'\\\\'."\n";
-    $text .= '\end{longtable}'."\n";
-    return $text;
-}
-
 sub createLaTexMacros() {
   my $text= '%\usepackage{etoolbox}';
 
@@ -119,7 +90,6 @@ sub replace($$) {
     my $notes = $invoice->getNotes();
 
     # invoice items (mutliple lines)
-    my $table = createLaTeXTable($invoice);
     my $parameters = createLaTexParams($invoice);
     my $macros = createLaTexMacros();
 
@@ -131,7 +101,6 @@ sub replace($$) {
         $l =~ s/__GNUCASH-INVOICE-NOTES__/$notes/;
 
         # invoice items (multiple lines)
-        $l =~ s/__GNUCASH-TABLE__/$table/;
         $l =~ s/__GNUCASH-MACROS__/$macros/;
         $l =~ s/__GNUCASH-PARAMETERS__/$parameters/;
 
