@@ -43,6 +43,16 @@ sub fillInfos($) {
     }
 }
 
+sub TaxTableName($) {
+  my ($self) = @_;
+
+  if ($self->{info}->{name}) {
+    return $self->{info}->{name};
+  }else {
+    return '';
+  }
+}
+
 sub calcTaxFromInvoiceEntry($$) {
     my ($self, $entry) = @_;
     my $tax = 0;
