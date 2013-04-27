@@ -98,6 +98,88 @@ sub getTaxTable ($) {
   }
 }
 
+sub CalculateDiscount {
+  my $origAmount=$_[0];
+  my $discType=$_[1];
+  my $discount=$_[2];
+  my $action=$_[3];
+
+  if ($discType eq 'VALUE') {
+    return $discount ;
+  }
+  elsif ($discType eq 'PERCENT') {
+    return $discount * $origAmount / 100;
+  }
+  else {
+      die 'Unknown DiscountType ' . $discType;
+  }
+}
+
+sub getAmount ($$) {
+    my ($self,$amounttype) = @_;
+    my $subtotal = $self->getQuantity() * $self->getPrice();
+
+    my $quantity = $self->getQuantity();
+    my $price = $self->getPrice();
+
+    my $tax = 0;
+
+    if (getDiscountHow($self) eq 'PRETAX') {
+      if (isTaxIncluded($self)) {
+        # Discount calc before tax, but tax is include in unitprice
+        $tax = $self->{taxtable}->CalculateTax(isTaxIncluded($self),$subtotal);
+        $subtotal -= $tax;
+        $subtotal -= CalculateDiscount($subtotal,getDiscountType($self),getDiscount($self),$self->getQuantity());
+        $tax = $self->{taxtable}->CalculateTax(0,$subtotal);
+      } else {
+        # Discount calc before tax, tax is not in unitprice
+        $subtotal -= CalculateDiscount($subtotal,getDiscountType($self),getDiscount($self),$self->getQuantity());
+        $tax = $self->{taxtable}->CalculateTax(isTaxIncluded($self),$subtotal);
+      }
+    }
+    elsif (getDiscountHow($self) eq 'SAMETIME') {
+      if (isTaxIncluded($self)) {
+        # Discount calc same as tax, but tax is include in unitprice
+        $tax = $self->{taxtable}->CalculateTax(isTaxIncluded($self),$subtotal);
+        $subtotal -= $tax;
+        $subtotal -= CalculateDiscount($subtotal,getDiscountType($self),getDiscount($self),$self->getQuantity());
+      } else {
+        # Discount calc same as tax, tax is not in unitprice
+        $tax = $self->{taxtable}->CalculateTax(isTaxIncluded($self),$subtotal);
+        $subtotal -= CalculateDiscount($subtotal,getDiscountType($self),getDiscount($self),$self->getQuantity());
+      }
+    }
+    elsif (getDiscountHow($self) eq 'POSTTAX') {
+      if (isTaxIncluded($self)) {
+        # Discount calc after tax, tax included in unitprice
+        $tax = $self->{taxtable}->CalculateTax(isTaxIncluded($self),$subtotal);
+        $subtotal -= CalculateDiscount($subtotal,getDiscountType($self),getDiscount($self),$self->getQuantity());
+        $subtotal -= $tax;
+      } else {
+        # Discount caclc after tax, but tax is not included in unitprice
+        $tax = $self->{taxtable}->CalculateTax(isTaxIncluded($self),$subtotal);
+        $subtotal -= CalculateDiscount($subtotal+$tax,getDiscountType($self),getDiscount($self),$self->getQuantity());
+      }
+    }
+    else
+    {
+      die 'Unknown Discount ' . getDiscountHow($self);
+    }
+
+    if ($amounttype eq 'SubTotal') {
+      return $subtotal;
+    }
+    elsif ($amounttype eq 'Tax') {
+      return $tax;
+    }
+    elsif ($amounttype eq 'Total') {
+      return $tax + $subtotal;
+    }
+    else {
+      die 'Unknown Amount ' . $amounttype ;
+    }
+}
+
 sub getNetPrice ($) {
     my ($self) = @_;
     my $price = $self->getPrice();

@@ -53,6 +53,28 @@ sub TaxTableName($) {
   }
 }
 
+sub CalculateTax ($$$) {
+  my ($self, $isTaxIncluded, $amounttotax) = @_;
+
+  my $tax = 0;
+
+  foreach my $t (@{ $self->{entries} }) {
+    if ($t->{type} eq "VALUE") {
+      $tax += $t->{amount};
+    } elsif ($t->{type} eq "PERCENT") {
+      if ($isTaxIncluded) {
+        $tax += (100*$amounttotax / (100+$t->{amount}) * ($t->{amount}/100) ) ;
+      } else {
+        $tax += $amounttotax * $t->{amount} / 100;
+      }
+    }
+    else {
+      die 'Unknown Taxtype' . $t->{type} ;
+    }
+  }
+  return $tax;
+}
+
 sub calcTaxFromInvoiceEntry($$) {
     my ($self, $entry) = @_;
     my $tax = 0;
