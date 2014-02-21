@@ -3,6 +3,7 @@ package Invoice;
 use Gnucash::Business::InvoiceEntry;
 use Gnucash::Business::Customer;
 use Gnucash::Business::Job;
+use Gnucash::Business::BillTerm;
 use Date::Parse;
 use XML::SimpleObject;
 
@@ -50,6 +51,10 @@ sub fillInfos($$) {
         }
 
         $self->{currency} = $_->child("invoice:currency")->child("cmdty:id")->value();
+
+        if ($_->child("invoice:terms")) {
+	    $self->{terms} = new BillTerm($xml, $_->child("invoice:terms")->value() );
+	}
 
         if ($_->child("invoice:billing_id")) {
             $self->{billing_id} = $_->child("invoice:billing_id")->value();
@@ -136,6 +141,11 @@ sub getPostingDate($) {
 sub getID($) {
     my ($self) = @_;
     return $self->{id};
+}
+
+sub getTerms($) {
+    my ($self) = @_;
+    return $self->{terms}{info}{description};
 }
 
 sub getCurrency($) {

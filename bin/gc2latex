@@ -94,6 +94,7 @@ sub replace($$) {
     my $address = l_enc( $invoice->getCustomer()->getAddress() );
     $address =~ s/\n/\\\\/g;
     my $notes = $invoice->getNotes();
+    my $terms = $invoice->getTerms();
     my $creditNoteType = $invoice->getCreditNoteType();
     my $currency = $invoice->getCurrency();
     my $total = sprintf("%0.2f", $invoice->getNetSum()+$invoice->getTaxes());
@@ -111,6 +112,7 @@ sub replace($$) {
         $l =~ s/__GNUCASH-POSTING-DATE__/$postingdate/g;
         $l =~ s/__GNUCASH-CUSTOMER__/$address/g;
         $l =~ s/__GNUCASH-INVOICE-NOTES__/$notes/g;
+	$l =~ s/__GNUCASH-BILLING-TERMS__/$terms/g;
         $l =~ s/__GNUCASH-CURRENCY__/$currency/g;
         $l =~ s/__GNUCASH-TOTAL__/$total/g;
         $l =~ s/__GNUCASH-SUBTOTAL__/$subtotal/g;
