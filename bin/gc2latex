@@ -1,3 +1,6 @@
+#!/opt/local/bin/perl
+# use the following line as default, the above line had to be
+# changed for Mac OSX perl installed with MacPorts/CPAN
 #!/usr/bin/perl
 
 # gc2latex by Stefan Tomanek <stefan@pico.ruhr.de>
@@ -93,8 +96,8 @@ sub replace($$) {
     my $postingdate = l_enc( time2str("%e.%L.%Y", $invoice->getPostingDate()) );
     my $address = l_enc( $invoice->getCustomer()->getAddress() );
     $address =~ s/\n/\\\\/g;
-    my $notes = $invoice->getNotes();
-    my $terms = $invoice->getTerms();
+    my $notes = l_enc($invoice->getNotes());
+    my $terms = l_enc($invoice->getTerms());
     my $creditNoteType = $invoice->getCreditNoteType();
     my $currency = $invoice->getCurrency();
     my $total = sprintf("%0.2f", $invoice->getNetSum()+$invoice->getTaxes());
