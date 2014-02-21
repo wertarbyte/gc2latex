@@ -5,6 +5,8 @@
 % adapted to use parameters and not directly generated
 % latex input from gc2latex by Benedikt Trefzer <benedikt.trefzer@cirrax.com>
 %
+% enhanced for appropriate titles (invoice vs. credit-note), works
+% since GnuCash 2.6 by Susanne Wunsch <Susanne.Wunsch@gleisBezug.de>
 
 \documentclass[DIN, pagenumber=false, parskip=half,% 
                fromalign=left, fromphone=true,%  
@@ -39,6 +41,11 @@ __GNUCASH-PARAMETERS__
 
 \setkomavar{invoice}{__GNUCASH-INVOICE-ID__}
 \setkomavar{date}{__GNUCASH-POSTING-DATE__}
+
+% Change the titles for your language needs
+\csdef{gclcreditnotetype1}{Gutschrift} % credit-note
+\csdef{gclcreditnotetype0}{Rechnung} % invoice/bill
+\setkomavar{title}{\csuse{__GNUCASH-CREDIT-NOTE-TYPE__}}
 
 \newcommand{\amp}{&}
 

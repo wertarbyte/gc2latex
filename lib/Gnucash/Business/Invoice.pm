@@ -27,6 +27,7 @@ sub new($$$) {
 sub fillInfos($$) {
     my ($self, $xml) = @_;
     
+    $self->{creditNoteType} = 'gclcreditnotetype0';		# bill/invoice (rather than credit note)
     my @invoices = $xml->child("gnc-v2")->child("gnc:book")->children("gnc:GncInvoice");
     foreach (@invoices) {
         my $id = $_->child("invoice:id")->value();
@@ -57,6 +58,24 @@ sub fillInfos($$) {
 	if (defined $_->child("invoice:notes")) {
 	    $self->{notes} = translateNewlines($_->child("invoice:notes")->value());
 	  }
+
+	#<invoice:slots>
+	#  <slot>
+	#    <slot:key>credit-note</slot:key>
+	#    <slot:value type="integer">1</slot:value>
+	#  </slot>
+	#</invoice:slots>
+	# Value "1" means "credit note", value "0" (or missing) means
+	#  "bill"/"invoice"
+	if ($_->child("invoice:slots")) {
+	    my $slots = $_->child("invoice:slots");
+	    foreach my $slot ($slots->children()) {
+		if ($slot->child("slot:key")->value() eq "credit-note" &&
+		    $slot->child("slot:value")->value() == 1) {
+		    $self->{creditNoteType} = 'gclcreditnotetype1';
+		}
+	    }
+	}
 
         last;
     }
@@ -132,6 +151,11 @@ sub getBillingID($) {
 sub getNotes($) {
     my ($self) = @_;
     return $self->{notes};
+}
+
+sub getCreditNoteType($) {
+    my ($self) = @_;
+    return $self->{creditNoteType};
 }
 
 ## translates newlines from '\n' into LaTeX syntax '\\'
