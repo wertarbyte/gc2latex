@@ -37,6 +37,7 @@ sub main($$$) {
 # LaTeX encode: use LaTeX::Encode if available
 sub l_enc ($) {
     my ($data) = @_;
+    return "" unless $data;
     my $result = $data;
     eval {
         # try to load LaTeX::Encode and encode the supplied data
