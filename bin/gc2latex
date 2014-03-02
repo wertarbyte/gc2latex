@@ -34,6 +34,12 @@ sub main($$$) {
     replace($template, $invoice);
 }
 
+sub translateNewlines($) {
+    my ($value) = @_;
+    $value =~ s/\n/\\\\/g;
+    return $value;
+}
+
 # LaTeX encode: use LaTeX::Encode if available
 sub l_enc ($) {
     my ($data) = @_;
@@ -46,6 +52,7 @@ sub l_enc ($) {
         require LaTeX::Encode;
         $result = LaTeX::Encode::latex_encode( $data, {iquotes=>1} );
     };
+    $result = translateNewlines( $result );
     return $result;
 }
 
@@ -96,7 +103,6 @@ sub replace($$) {
     my $id = $invoice->getID();
     my $postingdate = l_enc( time2str("%e.%L.%Y", $invoice->getPostingDate()) );
     my $address = l_enc( $invoice->getCustomer()->getAddress() );
-    $address =~ s/\n/\\\\/g;
     my $notes = l_enc($invoice->getNotes());
     my $terms = l_enc($invoice->getTerms());
     my $creditNoteType = $invoice->getCreditNoteType();

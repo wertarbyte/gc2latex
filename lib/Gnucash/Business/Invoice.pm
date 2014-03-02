@@ -61,8 +61,8 @@ sub fillInfos($$) {
         }
 
 	if (defined $_->child("invoice:notes")) {
-	    $self->{notes} = translateNewlines($_->child("invoice:notes")->value());
-	  }
+	    $self->{notes} = $_->child("invoice:notes")->value();
+	}
 
 	#<invoice:slots>
 	#  <slot>
@@ -166,13 +166,6 @@ sub getNotes($) {
 sub getCreditNoteType($) {
     my ($self) = @_;
     return $self->{creditNoteType};
-}
-
-## translates newlines from '\n' into LaTeX syntax '\\'
-sub translateNewlines($) {
-    my ($value) = @_;
-    $value =~ s/\n/\\\\/g;
-    return $value;
 }
 
 1;
