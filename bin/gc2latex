@@ -1,3 +1,6 @@
+#!/opt/local/bin/perl
+# use the following line as default, the above line had to be
+# changed for Mac OSX perl installed with MacPorts/CPAN
 #!/usr/bin/perl
 
 # gc2latex by Stefan Tomanek <stefan@pico.ruhr.de>
@@ -7,6 +10,7 @@ use Gnucash::Business::InvoiceEntry;
 use Gnucash::Business::Customer;
 use IO::File;
 use Date::Format;
+use IO::Zlib;
 
 use strict;
 
@@ -19,16 +23,27 @@ sub main($$$) {
     }
 
     my $parser = new XML::Parser (ErrorContext => 2, Style => "Tree");
-    my $xmlobj = new XML::SimpleObject( $parser->parsefile($gnucash) ) || die "Unable to open Gnucash file";
-    
+
+    my $zhandle = new IO::Zlib;
+    $zhandle->open($gnucash, "rb") || die "Unable to zopen Gnucash file\n";
+
+    my $xmlobj = new XML::SimpleObject( $parser->parse($zhandle) ) || die "Unable to open Gnucash file";
+
     my $invoice = new Invoice( $xmlobj, $id);
 
     replace($template, $invoice);
 }
 
+sub translateNewlines($) {
+    my ($value) = @_;
+    $value =~ s/\n/\\\\/g;
+    return $value;
+}
+
 # LaTeX encode: use LaTeX::Encode if available
-sub l_enc {
+sub l_enc ($) {
     my ($data) = @_;
+    return "" unless $data;
     my $result = $data;
     eval {
         # try to load LaTeX::Encode and encode the supplied data
@@ -37,58 +52,95 @@ sub l_enc {
         require LaTeX::Encode;
         $result = LaTeX::Encode::latex_encode( $data, {iquotes=>1} );
     };
+    $result = translateNewlines( $result );
     return $result;
 }
 
-sub createLaTeXTable($) {
-    my ($invoice) = @_;
+sub createLaTexMacros() {
 
-    my $cur = $invoice->getCurrency();
+  my $text= '%\usepackage{etoolbox}'."\n";
 
-    my $text = '\begin{longtable}{l|p{150pt}|l|l|r|r}'."\n";
-    $text .= 'Datum&Beschreibung&Einheit&Anzahl&Stückpreis&Betrag\\\\'."\n";
-    $text .= '\hline\hline'."\n";
-    foreach my $e (@{ $invoice->getEntries() }) {
-        $text .= time2str("%e.%L.%Y", $e->getDate())."&";
-        $text .= l_enc( $e->getDescription() )."&";
-        $text .= l_enc( $e->getAction() )."&";
-        $text .= $e->getQuantity()."&";
-        $text .= sprintf("%0.2f", $e->getNetPrice())." $cur&";
-        $text .= sprintf("%0.2f", $e->getNetSum())." ".$cur.'\\\\'."\n";
-        $text .= '\hline'."\n";
-    }
-    $text .= '\hline'."\n";
-    $text .= '\multicolumn{5}{r|}{Summe} &'.sprintf("%0.2f", $invoice->getNetSum()).' '.$cur.'\\\\'."\n";
-    ## FIXME
-    ##	* Retrieve the right percentage from gnucash file
-    ##	* Support multiple taxes
-    $text .= '\multicolumn{5}{r|}{zuzüglich 19\% Umsatzsteuer} &'.sprintf("%0.2f", $invoice->getTaxes()).' '.$cur.'\\\\'."\n";
-    $text .= '\hline\hline'."\n";
-    $text .= '\multicolumn{5}{r|}{Gesamtsumme} &'.sprintf("%0.2f", $invoice->getNetSum()+$invoice->getTaxes()).' '.$cur.'\\\\'."\n";
-    $text .= '\end{longtable}'."\n";
-    return $text;
+  $text .= '\newcommand\gclsetline[3]{%'    ."\n";
+  $text .= '  \csdef{gcl#1#2}{#3}}%'        ."\n";
+
+  $text .= '\newcommand\gclgetline[2]{%'    ."\n";
+  $text .= '  \csuse{gcl#1#2}}'             ."\n";
+
+  return $text;
+}
+
+sub createLaTexParams($) {
+  my ($invoice) = @_;
+
+  my $text = '';
+
+  my $i=0;
+  foreach my $e (@{ $invoice->getEntries() }) {
+    $text .= "\\gclsetline{Date}{$i}{"          . time2str("%e.%L.%Y", $e->getDate())               . "}\n" ;
+    $text .= "\\gclsetline{Description}{$i}{"   . l_enc( $e->getDescription() )                     . "}\n" ;
+    $text .= "\\gclsetline{Action}{$i}{"        . l_enc( $e->getAction() )                          . "}\n" ;
+    $text .= "\\gclsetline{Quantity}{$i}{"      . $e->getQuantity()                                 . "}\n" ; 
+    $text .= "\\gclsetline{UnitPrice}{$i}{"     . sprintf("%0.2f", $e->getPrice())                  . "}\n" ;
+    $text .= "\\gclsetline{DiscType}{$i}{"      . l_enc($e->getDiscountType())                      . "}\n" ;
+    $text .= "\\gclsetline{DiscHow}{$i}{"       . l_enc($e->getDiscountHow())                       . "}\n" ;
+    $text .= "\\gclsetline{Disc}{$i}{"          . sprintf("%0.2f", round($e->getDiscount()))        . "}\n" ;
+    $text .= "\\gclsetline{isTaxable}{$i}{"     . l_enc($e->isTaxable())                            . "}\n" ;
+    $text .= "\\gclsetline{TaxTable}{$i}{"      . l_enc($e->getTaxTable())                          . "}\n" ;
+    $text .= "\\gclsetline{isTaxIncluded}{$i}{" . l_enc($e->isTaxIncluded())                        . "}\n" ;
+    $text .= "\\gclsetline{Subtotal}{$i}{"      . sprintf("%0.2f", round($e->getAmount('SubTotal'))). "}\n" ;
+    $text .= "\\gclsetline{Tax}{$i}{"           . sprintf("%0.2f", round($e->getAmount('Tax')))     . "}\n" ;
+    $text .= "\\gclsetline{Total}{$i}{"         . sprintf("%0.2f", round($e->getAmount('Total')))   . "}\n" ;
+    $text .= "\n";
+    $i=$i+1;
+  }
+  $text .= '\csdef{gclinvoicelines}{' . $i . "}\n";
+  return $text;
 }
 
 sub replace($$) {
     my ($template, $invoice) = @_;
-    
+
+    my $id = $invoice->getID();
+    my $postingdate = l_enc( time2str("%e.%L.%Y", $invoice->getPostingDate()) );
+    my $address = l_enc( $invoice->getCustomer()->getAddress() );
+    my $notes = l_enc($invoice->getNotes());
+    my $terms = l_enc($invoice->getTerms());
+    my $creditNoteType = $invoice->getCreditNoteType();
+    my $currency = $invoice->getCurrency();
+    my $total = sprintf("%0.2f", $invoice->getNetSum()+$invoice->getTaxes());
+    my $subtotal = sprintf("%0.2f", $invoice->getNetSum());
+    my $taxes = sprintf("%0.2f", $invoice->getTaxes());
+
+    # invoice items (mutliple lines)
+    my $parameters = createLaTexParams($invoice);
+    my $macros = createLaTexMacros();
+
     my $file = new IO::File "< $template" || die "Unable to open template";
-
     while ( my $l = $file->getline() ) {
-        my $id = $invoice->getID();
-        my $date = l_enc( time2str("%e.%L.%Y", $invoice->getPostingDate()) );
-        my $address = l_enc( $invoice->getCustomer()->getAddress() );
-        $address =~ s/\n/\\\\/g;
-        my $table = createLaTeXTable($invoice);
 
-        $l =~ s/__GNUCASH-INVOICE-ID__/$id/;
-        $l =~ s/__GNUCASH-POSTING-DATE__/$date/;
-        $l =~ s/__GNUCASH-CUSTOMER__/$address/;
-        $l =~ s/__GNUCASH-TABLE__/$table/;
+        $l =~ s/__GNUCASH-INVOICE-ID__/$id/g;
+        $l =~ s/__GNUCASH-POSTING-DATE__/$postingdate/g;
+        $l =~ s/__GNUCASH-CUSTOMER__/$address/g;
+        $l =~ s/__GNUCASH-INVOICE-NOTES__/$notes/g;
+	$l =~ s/__GNUCASH-BILLING-TERMS__/$terms/g;
+        $l =~ s/__GNUCASH-CURRENCY__/$currency/g;
+        $l =~ s/__GNUCASH-TOTAL__/$total/g;
+        $l =~ s/__GNUCASH-SUBTOTAL__/$subtotal/g;
+        $l =~ s/__GNUCASH-TAXES__/$taxes/g;
+        $l =~ s/__GNUCASH-CREDIT-NOTE-TYPE__/$creditNoteType/g;
+
+        # invoice items (multiple lines)
+        $l =~ s/__GNUCASH-MACROS__/$macros/;
+        $l =~ s/__GNUCASH-PARAMETERS__/$parameters/;
 
         print $l;
     }
     $file->close();
+}
+
+sub round($) {
+    my ($value) = @_;
+    return int($value * 100 + 0.5) / 100;
 }
 
 main($ARGV[0], $ARGV[1], $ARGV[2]);

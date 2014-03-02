@@ -43,23 +43,36 @@ sub fillInfos($) {
     }
 }
 
-sub calcTaxFromInvoiceEntry($$) {
-    my ($self, $entry) = @_;
-    my $tax = 0;
-    my $sum = $entry->getQuantity() * $entry->getPrice();
-    
-    foreach my $t (@{ $self->{entries} }) {
-        if ($t->{type} eq "VALUE") {
-            $tax += $t->{amount};
-        } elsif ($t->{type} eq "PERCENT") {
-            if ($entry->isTaxIncluded()) {
-                $tax += (100*$sum / (100+$t->{amount}) * ($t->{amount}/100) ) ;
-            } else {
-                $tax += $sum * $t->{amount} / 100;
-            }
-        }
+sub TaxTableName($) {
+  my ($self) = @_;
+
+  if ($self->{info}->{name}) {
+    return $self->{info}->{name};
+  }else {
+    return '';
+  }
+}
+
+sub CalculateTax ($$$) {
+  my ($self, $isTaxIncluded, $amounttotax) = @_;
+
+  my $tax = 0;
+
+  foreach my $t (@{ $self->{entries} }) {
+    if ($t->{type} eq "VALUE") {
+      $tax += $t->{amount};
+    } elsif ($t->{type} eq "PERCENT") {
+      if ($isTaxIncluded) {
+        $tax += (100*$amounttotax / (100+$t->{amount}) * ($t->{amount}/100) ) ;
+      } else {
+        $tax += $amounttotax * $t->{amount} / 100;
+      }
     }
-    return $tax;
+    else {
+      die 'Unknown Taxtype' . $t->{type} ;
+    }
+  }
+  return $tax;
 }
 
 1;

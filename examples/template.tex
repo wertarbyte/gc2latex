@@ -1,53 +1,104 @@
 % Template for gc2latex
 % by Stefan Tomanek <stefan@pico.ruhr.de>
 % http://stefans.datenbruch.de/gnucash/gc2latex.shtml
+%
+% adapted to use parameters and not directly generated
+% latex input from gc2latex by Benedikt Trefzer <benedikt.trefzer@cirrax.com>
+%
+% enhanced for appropriate titles (invoice vs. credit-note), works
+% since GnuCash 2.6 by Susanne Wunsch <Susanne.Wunsch@gleisBezug.de>
 
 \documentclass[DIN, pagenumber=false, parskip=half,% 
                fromalign=left, fromphone=true,%  
                fromemail=true, fromurl=false, %
                fromlogo=true, fromrule=false]{scrlttr2}
 
-\usepackage[latin1]{inputenc}
-\usepackage{german}
-\RequirePackage{graphicx}
+\usepackage[ngerman]{babel}
+\usepackage{etoolbox}
+\usepackage{ifthen}
+\usepackage{tabularx}
+\usepackage{booktabs}
 
 \setkomavar{fromname}{Max Mustermann}
-\setkomavar{fromaddress}{Musterstraße 34\\12345 Musterstadt}
+\setkomavar{fromaddress}{Musterstr. 34\\12345 Musterstadt}
 \setkomavar{fromphone}{01234/123456}
 \setkomavar{fromemail}{muster@email.de}
 \setkomavar{fromurl}{}
 \setkomavar{signature}{Max Mustermann}
-\setkomavar{fromlogo}{\includegraphics*[width=6cm]{musterfirma.eps}}
 \setkomavar{frombank}{Musterbank\\BLZ: 12345678\\Kontonummer: 0123456}
-\setkomavar{subject}{Rechnung Nr. __GNUCASH-INVOICE-ID__}
+
+% Werte: DIN, DINmtext, SN, SNleft, KOMAold.
+\LoadLetterOption{DIN}  
+
+__GNUCASH-MACROS__
+
+__GNUCASH-PARAMETERS__
+
+\setkomavar{yourref}{}
+\setkomavar{yourmail}{}
+\setkomavar{myref}{}
+\setkomavar{customer}{}
+
+\setkomavar{invoice}{__GNUCASH-INVOICE-ID__}
 \setkomavar{date}{__GNUCASH-POSTING-DATE__}
 
-\begin{document}
+% Change the titles for your language needs
+\csdef{gclcreditnotetype1}{Gutschrift} % credit-note
+\csdef{gclcreditnotetype0}{Rechnung} % invoice/bill
+\setkomavar{title}{\csuse{__GNUCASH-CREDIT-NOTE-TYPE__}}
 
-\firstfoot{ {\hrulefill\\}%
-  \fontsize{9}{10.5}\selectfont%
-  \parbox[t]{0.4\textwidth}{%
-    Musterfirma\\
-    \usekomavar{fromname}\\
-    \usekomavar{fromaddress}}%
-  \hfill%
-  \parbox[t]{0.3\textwidth}{\usekomavar{fromname}\\\usekomavar{frombank}}%
-  \hfill% 
-  \parbox[t]{0.3\textwidth}{%
-    Steuernummer: 111/22222/3333\\
-    Finanzamt Musterstadt-Süd\par } 
+\newcommand{\amp}{&}
+
+\newcommand{\printQuantity}[1]{
+  \gclgetline{Quantity}{#1}%
+  \ifthenelse{\equal{\gclgetline{Action}{#1}}{Hours}}{h}{}
+  \ifthenelse{\equal{\gclgetline{Action}{#1}}{Material}}{Stk.}{}
 }
 
+\newcommand{\printDiscount}[1]{
+  \gclgetline{Disc}{#1}%
+  \ifthenelse{\equal{\gclgetline{DiscType}{#1}}{PERCENT}}{\%}{}
+  \ifthenelse{\equal{\gclgetline{DiscType}{#1}}{VALUE}}{__GNUCASH-CURRENCY__}{}
+}
+  
+  
+
+\newcommand{\printline}[5]{
+#1\amp#2\amp#3\amp#4\amp#5\\
+}
+
+
+\newcounter{i}
+\newcommand{\printtab}[1]{%
+  \setcounter{i}{0}
+  \whiledo {\value{i} < #1}{
+    \printline{\printQuantity{\arabic{i}}}
+              {\gclgetline{Description}{\arabic{i}}}
+              {\hfill\gclgetline{UnitPrice}{\arabic{i}}}
+              {\printDiscount{\arabic{i}}}
+              {\hfill\gclgetline{Subtotal}{\arabic{i}}}
+    \stepcounter{i}
+  }
+}
+
+
+\begin{document}
 \begin{letter}{__GNUCASH-CUSTOMER__}
+\opening{}
 
-\opening{Sehr geehrte Damen und Herren,}
-hiermit erlaube ich ich mir zu berechnen:
+\fontsize{10pt}{1em}\selectfont
+\begin{tabularx}{\linewidth}{lXlll}
+  Menge & Text & Preis (__GNUCASH-CURRENCY__) & Rabatt & Total (__GNUCASH-CURRENCY__) \\\toprule
+  \printtab{\csuse{gclinvoicelines}}\\[-2ex]
+  \midrule
+  &Taxes&\hfill__GNUCASH-SUBTOTAL__&&\hfill__GNUCASH-TAXES__\\
+  &\multicolumn{3}{l}{Total}&\hfill__GNUCASH-TOTAL__\\
+  \bottomrule
+\end{tabularx}
 
-__GNUCASH-TABLE__
+__GNUCASH-BILLING-TERMS__
 
-\closing{Mit freundlichem Gruß}
+\closing{}
 
 \end{letter}
-
 \end{document}
-

@@ -3,6 +3,7 @@ package Invoice;
 use Gnucash::Business::InvoiceEntry;
 use Gnucash::Business::Customer;
 use Gnucash::Business::Job;
+use Gnucash::Business::BillTerm;
 use Date::Parse;
 use XML::SimpleObject;
 
@@ -27,11 +28,12 @@ sub new($$$) {
 sub fillInfos($$) {
     my ($self, $xml) = @_;
     
+    $self->{creditNoteType} = 'gclcreditnotetype0';		# bill/invoice (rather than credit note)
     my @invoices = $xml->child("gnc-v2")->child("gnc:book")->children("gnc:GncInvoice");
     foreach (@invoices) {
         my $id = $_->child("invoice:id")->value();
         $id =~ s/^0*//g;
-        next unless ($id eq $self->{id});
+        next unless (($id == $self->{id}) || ( $id eq $self->{id} )) ;
         
         $self->{guid} = $_->child("invoice:guid")->value();
         
@@ -50,9 +52,35 @@ sub fillInfos($$) {
 
         $self->{currency} = $_->child("invoice:currency")->child("cmdty:id")->value();
 
+        if ($_->child("invoice:terms")) {
+	    $self->{terms} = new BillTerm($xml, $_->child("invoice:terms")->value() );
+	}
+
         if ($_->child("invoice:billing_id")) {
             $self->{billing_id} = $_->child("invoice:billing_id")->value();
         }
+
+	if (defined $_->child("invoice:notes")) {
+	    $self->{notes} = $_->child("invoice:notes")->value();
+	}
+
+	#<invoice:slots>
+	#  <slot>
+	#    <slot:key>credit-note</slot:key>
+	#    <slot:value type="integer">1</slot:value>
+	#  </slot>
+	#</invoice:slots>
+	# Value "1" means "credit note", value "0" (or missing) means
+	#  "bill"/"invoice"
+	if ($_->child("invoice:slots")) {
+	    my $slots = $_->child("invoice:slots");
+	    foreach my $slot ($slots->children()) {
+		if ($slot->child("slot:key")->value() eq "credit-note" &&
+		    $slot->child("slot:value")->value() == 1) {
+		    $self->{creditNoteType} = 'gclcreditnotetype1';
+		}
+	    }
+	}
 
         last;
     }
@@ -63,6 +91,7 @@ sub fillEntries($$) {
     my @entries = $gc->child("gnc-v2")->child("gnc:book")->children("gnc:GncEntry");
     my @items;
     foreach my $entry (@entries) {
+        next unless ($entry->child("entry:invoice"));
         next unless ($entry->child("entry:invoice")->value() eq $self->{guid});
         
         my $entry = new InvoiceEntry( $gc, $entry->child("entry:guid")->value() );
@@ -77,7 +106,7 @@ sub getNetSum($) {
     
     my $sum = 0;
     foreach my $e (@{$self->{entries}}) {
-	$sum += $e->getNetSum();
+	$sum += $e->getAmount('SubTotal');
     }
     return $sum;
 }
@@ -87,7 +116,7 @@ sub getTaxes($) {
 
     my $tax = 0;
     foreach my $e (@{$self->{entries}}) {
-	$tax += $e->getTax();
+	$tax += $e->getAmount('Tax');
     }
     return $tax;
 }
@@ -114,6 +143,11 @@ sub getID($) {
     return $self->{id};
 }
 
+sub getTerms($) {
+    my ($self) = @_;
+    return $self->{terms}{info}{description};
+}
+
 sub getCurrency($) {
     my ($self) = @_;
     return $self->{currency};
@@ -123,4 +157,15 @@ sub getBillingID($) {
     my ($self) = @_;
     return $self->{billing_id};
 }
+
+sub getNotes($) {
+    my ($self) = @_;
+    return $self->{notes};
+}
+
+sub getCreditNoteType($) {
+    my ($self) = @_;
+    return $self->{creditNoteType};
+}
+
 1;
